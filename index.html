@@ -1,0 +1,136 @@
+<!--
+AR
+hit-test
+
+途中
+
+
+<参考>
+https://www.jyuko49.com/entry/2020/12/23/005509
+-->
+
+<!--  -->
+
+<!-- このソースコードはHTML5で作成している -->
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <!-- 機能追加、文字コード指定→世界中の言語を取り扱うことが出来る -->
+    <meta charset="utf-8">
+
+    <!-- Webページのタグに表示される文字列 -->
+    <title>3D_try_3</title>
+
+    <!-- 機能追加 -->
+    <meta name="description" content="Hello, World! • A-Frame">
+
+    <!-- JavaScript、A-Frameというフレームワーク使用 -->
+    <script src="../../../dist/aframe-master.js"></script>
+
+    <!--  -->
+    <style>
+      /* By default, hide the DOM Overlay element. */
+     
+    </style>
+
+    <!-- WebXR使用宣言、WebXRコンポーネントの設定 -->
+    <!-- xrHitTestSourceの取得 (xrHitTestSourceとは、hit-testの結果を取得するための事前準備・インターフェース) -->
+    <a-scene webxr="requiredFeatures: hit-test,local-floor;
+                optionalFeatures: dom-overlay,unbounded;
+                overlayElement: #overlay;"></a-scene> 
+    
+    
+
+
+
+    <!--  -->
+
+
+    <!--  -->
+
+
+
+
+    <script>
+      AFRAME.registerComponent('ar-hit-test', {
+
+        
+        init: function () {
+
+          this.xrHitTestSource = null;
+          this.viewerSpace = null;
+          this.refSpace = null;
+
+          this.el.sceneEl.renderer.xr.addEventListener('sessionend', (ev) => {
+            this.viewerSpace = null;
+            this.refSpace = null;
+            this.xrHitTestSource = null;
+          });
+
+
+          this.el.sceneEl.renderer.xr.addEventListener('sessionstart', (ev) => {
+            let session = this.el.sceneEl.renderer.xr.getSession();
+
+            let element = this.el;
+            session.addEventListener('select', function () {
+              let position = element.getAttribute('position');
+
+              document.getElementById('dino').setAttribute('position', position);
+              document.getElementById('light').setAttribute('position', {
+                x: (position.x - 2),
+                y: (position.y + 4),
+                z: (position.z + 2)
+              });
+            });
+            
+            
+            session.requestReferenceSpace('viewer').then((space) => {
+              this.viewerSpace = space;
+              session.requestHitTestSource({space: this.viewerSpace})
+                  .then((hitTestSource) => {
+                    this.xrHitTestSource = hitTestSource;
+                  });
+            });
+
+            session.requestReferenceSpace('local-floor').then((space) => {
+              this.refSpace = space;
+            });
+          });
+        },
+
+        
+        tick: function () {
+          if (this.el.sceneEl.is('ar-mode')) {
+            if (!this.viewerSpace) return;
+
+            let frame = this.el.sceneEl.frame;
+            let xrViewerPose = frame.getViewerPose(this.refSpace);
+
+            if (this.xrHitTestSource && xrViewerPose) {
+              let hitTestResults = frame.getHitTestResults(this.xrHitTestSource);
+              if (hitTestResults.length > 0) {
+                let pose = hitTestResults[0].getPose(this.refSpace);
+
+                let inputMat = new THREE.Matrix4();
+                inputMat.fromArray(pose.transform.matrix);
+
+                let position = new THREE.Vector3();
+                position.setFromMatrixPosition(inputMat);
+                this.el.setAttribute('position', position);
+              }
+            }
+          }
+        }
+      });
+
+    </script>
+  </head> 
+</html>
+
+
+
+
+
+
+
